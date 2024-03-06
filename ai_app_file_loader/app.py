@@ -1,4 +1,5 @@
 import os
+import re
 
 from slack_bolt import App, Ack
 from slack_bolt.adapter.socket_mode import SocketModeHandler
@@ -27,7 +28,7 @@ def document_loader():
     return loader.load()
 
 
-def text_splitter(docs, chunk_size=1000, chunk_overlap=100, separators=["\n\n", "。"]):
+def text_splitter(docs, chunk_size=1000, chunk_overlap=100, separators=["。"]):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -68,9 +69,10 @@ def handle_mention(event, say):
     docs = document_loader()
     split_text = text_splitter(docs)
 
-    must_prompt = " in Japanese"
-    user_query = event.get('text', "TiDBとは")
-    res = query(query=user_query + must_prompt, documents=split_text)
+    user_query = event.get('text', "")
+    message = re.sub("<@.*>", "", user_query) + " in Japanese"
+    res = query(query=message, documents=split_text)
+
     answer = res['answer']
     sources = res['sources']
 
