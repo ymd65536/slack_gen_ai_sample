@@ -1,0 +1,2 @@
+# slack_gen_ai_sample
+Slackにアップロードされたファイルについて質問できるAIをつくる
