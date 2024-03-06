@@ -6,6 +6,11 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from langchain_community.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
+from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import VertexAIEmbeddings
+from langchain.indexes import VectorstoreIndexCreator
+from langchain_community.vectorstores import FAISS
+
 project_id = os.environ.get("PROJECT_ID", "")
 APP_ENVIRONMENT = os.environ.get("APP_ENVIRONMENT", "")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "")
@@ -40,6 +45,19 @@ def text_splitter(docs, chunk_size=1000, chunk_overlap=100, separators=["\n\n", 
     return split_text
 
 
+def query(query, documents):
+    embeddings = VertexAIEmbeddings(model_name="textembedding-gecko@001")
+    index = VectorstoreIndexCreator(
+        embedding=embeddings,
+        vectorstore_cls=FAISS
+    ).from_documents(documents)
+
+    chat = VertexAI(model_name="gemini-1.0-pro-001", temperature=0)
+    result = index.query_with_sources(query, llm=chat)
+
+    return result
+
+
 def handle_mention(event, say):
     print("handle_mention")
     thread_id = event['ts']
@@ -50,8 +68,20 @@ def handle_mention(event, say):
     docs = document_loader()
     split_text = text_splitter(docs)
 
-    res = f"分割したテキストの数：{len(split_text)}"
-    say(res, thread_ts=thread_id)
+    must_prompt = " in Japanese"
+    user_query = event.get('text', "TiDBとは")
+    res = query(query=user_query + must_prompt, documents=split_text)
+    answer = res['answer']
+    sources = res['sources']
+
+    result = f"""
+回答：
+{answer}
+参照元：
+{sources}
+"""
+    
+    say(result, thread_ts=thread_id)
 
 
 def slack_ack(ack: Ack):
