@@ -4,6 +4,7 @@ import re
 from slack_bolt import App, Ack
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
+from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -24,11 +25,11 @@ app = App(
 
 
 def document_loader():
-    loader = DirectoryLoader('./', glob="**/README.md")
+    loader = DirectoryLoader('./', glob="**/README.md", loader_cls=TextLoader)
     return loader.load()
 
 
-def text_splitter(docs, chunk_size=1000, chunk_overlap=100, separators=["。"]):
+def text_splitter(docs, chunk_size=1000, chunk_overlap=100, separators=["\n\n", "。"]):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -70,7 +71,7 @@ def handle_mention(event, say):
     split_text = text_splitter(docs)
 
     user_query = event.get('text', "")
-    message = re.sub("<@.*>", "", user_query) + " in Japanese"
+    message = re.sub("<@.*>", "", user_query)
     res = query(query=message, documents=split_text)
 
     answer = res['answer']
@@ -82,7 +83,7 @@ def handle_mention(event, say):
 参照元：
 {sources}
 """
-    
+
     say(result, thread_ts=thread_id)
 
 
