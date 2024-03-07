@@ -1,0 +1,13 @@
+# Vertex AI
+google-cloud-aiplatform==1.40.0
+
+# Google Cloud
+# google-cloud-storage==2.14.0
+
+# LangChain
+langchain-google-vertexai==0.0.3
+# langchain==0.1.0
+# langchain-community==0.0.13
+
+# Slack Bolt
+slack-bolt==1.18.0
